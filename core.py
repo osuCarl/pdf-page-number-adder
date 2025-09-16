@@ -11,17 +11,20 @@ def add_page_number(input_pdf, startNumber):
 
     for i, page in enumerate(reader.pages):
         packet = BytesIO()
-        # 创建页码
-        can = canvas.Canvas(packet, pagesize=letter)
+        
+        page_width = float(page.mediabox.width)
+        page_height = float(page.mediabox.height)
+        # 创建页码, 使用页面自身尺寸
+        can = canvas.Canvas(packet, pagesize=(page_width, page_height))
         # 页码从 startNumber 开始
         number = i + startNumber
-        page_width = float(page.mediabox.width)
 
         print(f"正在处理文件：{input_pdf} 页 {i+1}/{num_pages}: 添加页码 {number}")
         if number % 2 == 1:
-            position = (page_width - 100, 50)  # 右下角
+            position = (page_width - 50, 35)  # 右下角
         else:
-            position = (50, 50)  # 左下角
+            position = (35, 35)  # 左下角
+        print(f"页面尺寸: ({page_width}, {page_height}), position位置：{position}")
         can.drawString(*position, f"- {number} -")  # 页码位置可调整
         can.save()
         packet.seek(0)
