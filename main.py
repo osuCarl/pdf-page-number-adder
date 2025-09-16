@@ -1,0 +1,69 @@
+import os
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
+
+
+split = False
+
+def add_page_number(input_pdf, startNumber):
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
+    num_pages = len(reader.pages)
+
+    for i, page in enumerate(reader.pages):
+        packet = BytesIO()
+        # 创建页码
+        can = canvas.Canvas(packet, pagesize=letter)
+        # 页码从 startNumber 开始
+        number = i + startNumber
+        page_width = float(page.mediabox.width)
+
+        print(f"正在处理文件：{input_pdf} 页 {i+1}/{num_pages}: 添加页码 {number}")
+        if number % 2 == 1:
+            position = (page_width - 100, 50)  # 右下角
+        else:
+            position = (50, 50)  # 左下角
+        can.drawString(*position, f"- {number} -")  # 页码位置可调整
+        can.save()
+        packet.seek(0)
+
+        # 叠加页码到原页面
+        from PyPDF2 import PdfReader as PR
+        overlay = PR(packet)
+        page.merge_page(overlay.pages[0])
+        writer.add_page(page)
+    
+    return writer
+
+
+pdf_folder = "1-2 每百名学生拥有县级以上骨干教师数/"
+# 遍历文件夹中的所有PDF文件并添加页码
+pdf_files= [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
+
+
+startNumber = 1
+if (split):
+    for f in pdf_files:
+        file = os.path.join(pdf_folder, f)
+        out_name = f"numbered_{f}"
+        writer = add_page_number(file, startNumber)
+        startNumber += len(PdfReader(file).pages)
+        with open(out_name, "wb") as f_out:
+            writer.write(f_out)
+        print(f"已处理 {f}，输出为 {out_name}")
+
+else:
+    merged_file = "merged_output.pdf"
+    with open(merged_file, "wb") as f_out:
+        writer = PdfWriter()
+        for fileName in pdf_files:
+            file = os.path.join(pdf_folder, fileName)
+            added = add_page_number(file, startNumber)
+            startNumber += len(PdfReader(file).pages)
+            for page in added.pages:
+                writer.add_page(page)
+        writer.write(f_out)
+    print(f"已生成合并文件 {merged_file}")
+
