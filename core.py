@@ -4,9 +4,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
-
-split = False
-
 def add_page_number(input_pdf, startNumber):
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
@@ -38,32 +35,37 @@ def add_page_number(input_pdf, startNumber):
     return writer
 
 
-pdf_folder = "1-2 每百名学生拥有县级以上骨干教师数/"
+# pdf_folder = "1-2 每百名学生拥有县级以上骨干教师数/"
 # 遍历文件夹中的所有PDF文件并添加页码
-pdf_files= [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
+# pdf_files= [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
 
+def process_pdfs(pdf_paths):
+    split = False
+    if len(pdf_paths) < 1:
+        print("PDF 列表为空！")
+        return
+    
 
-startNumber = 1
-if (split):
-    for f in pdf_files:
-        file = os.path.join(pdf_folder, f)
-        out_name = f"numbered_{f}"
-        writer = add_page_number(file, startNumber)
-        startNumber += len(PdfReader(file).pages)
-        with open(out_name, "wb") as f_out:
-            writer.write(f_out)
-        print(f"已处理 {f}，输出为 {out_name}")
-
-else:
-    merged_file = "merged_output.pdf"
-    with open(merged_file, "wb") as f_out:
-        writer = PdfWriter()
-        for fileName in pdf_files:
-            file = os.path.join(pdf_folder, fileName)
-            added = add_page_number(file, startNumber)
+    startNumber = 1
+    if (split):
+        for f in pdf_paths:
+            file = f
+            out_name = f"numbered_{f}"
+            writer = add_page_number(file, startNumber)
             startNumber += len(PdfReader(file).pages)
-            for page in added.pages:
-                writer.add_page(page)
-        writer.write(f_out)
-    print(f"已生成合并文件 {merged_file}")
+            with open(out_name, "wb") as f_out:
+                writer.write(f_out)
+            print(f"已处理 {f}，输出为 {out_name}")
+
+    else:
+        merged_file = "merged_output.pdf"
+        with open(merged_file, "wb") as f_out:
+            writer = PdfWriter()
+            for file in pdf_paths:
+                added = add_page_number(file, startNumber)
+                startNumber += len(PdfReader(file).pages)
+                for page in added.pages:
+                    writer.add_page(page)
+            writer.write(f_out)
+        print(f"已生成合并文件 {merged_file}")
 
